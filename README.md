@@ -15,6 +15,8 @@ For this program to work properly, several things are needed:
 In its current state, the program will locate the minesweeper application on screen and simply click each space in the game, column by column.
 
 ### How to use
+Before running the program, take the 3 images out of the folder corresponding to your operating system and place them in the same directory is 'minesweeperPro.py'. This must be done because Google chose to use different color palettes on different operating systems.
+
 To run the program (after all requirements are satisfied), open the Google minesweeper application and run the python file 'minesweepPro.py' in a terminal that does not cover up the game. The program will automatically play the game. To cancel in mid-game, move the mouse to the Top-Left of the screen.
 
 ### Things we have to do to start
