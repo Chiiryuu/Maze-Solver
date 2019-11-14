@@ -46,7 +46,7 @@ def play(difficulty, playBox):
             yPos = middleBaseBox[1] + boxWidth*j
             col.append((xPos,yPos))
         boxPositions.append(col)
-    print(boxPositions)
+    #print(boxPositions)
     for row in boxPositions:
         for pos in row:
             click(pos[0],pos[1],0.2)
