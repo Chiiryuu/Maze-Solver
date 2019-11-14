@@ -22,6 +22,7 @@ def click(x,y, delay=0):
         pyautogui.click(x,y)
     except:
         print('Triggered Failsafe')
+        exit()
 
 def getPlayBox():
     for i in range(len(difficultyPics)):
