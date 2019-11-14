@@ -14,6 +14,9 @@ For this program to work properly, several things are needed:
 ### Current State of the Program
 In its current state, the program will locate the minesweeper application on screen and simply click each space in the game, column by column.
 
+### How to use
+To run the program (after all requirements are satisfied), open the Google minesweeper application and run the python file 'minesweepPro.py' in a terminal that does not cover up the game. The program will automatically play the game. To cancel in mid-game, move the mouse to the Top-Left of the screen.
+
 ### Things we have to do to start
 * Plan exactly what our goal is
 * Decide on search method (or plan support multiple types of searches)
