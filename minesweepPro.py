@@ -47,9 +47,14 @@ def play(difficulty, playBox):
             col.append((xPos,yPos))
         boxPositions.append(col)
     #print(boxPositions)
-    for row in boxPositions:
-        for pos in row:
-            click(pos[0],pos[1],0.2)
+    
+    middleBox = boxPositions[numBoxes[0]//2 -1][numBoxes[1]//2 -1]
+    
+    click(middleBox[0],middleBox[1],0.2)
+    
+    #for row in boxPositions:
+       # for pos in row:
+           # click(pos[0],pos[1],0.2)
 
 if __name__ == "__main__":
     print("Initializing Minesweeper Program")
@@ -66,4 +71,3 @@ if __name__ == "__main__":
 
 
 #screenshot = pyautogui.screenshot()
-
