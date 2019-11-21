@@ -1,4 +1,6 @@
 import pyautogui
+import time
+from PIL import Image
 
 #Close program if you go to (0,0)
 #  https://pyautogui.readthedocs.io/en/latest/cheatsheet.html
@@ -14,6 +16,8 @@ difficultyBoxSizes = [45,30,25]
 difficultyBombs = [10,40,99]
 boxPositions = []
 uiHeight=60
+
+animationDelay=0.85
 
 def click(x,y, delay=0):
     try:
@@ -51,6 +55,19 @@ def play(difficulty, playBox):
     middleBox = boxPositions[numBoxes[0]//2 -1][numBoxes[1]//2 -1]
     
     click(middleBox[0],middleBox[1],0.2)
+    
+    time.sleep(animationDelay)
+    
+    image = pyautogui.screenshot()
+    
+    #image = image[5:100]
+    
+    image = image.crop((playBox.left, playBox.top,playBox.left +  playBox.width, playBox.top + playBox.height))
+    
+    #print(image)
+    
+    image.save('initial-state.png')
+    
     
     #for row in boxPositions:
        # for pos in row:
