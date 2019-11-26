@@ -5,7 +5,8 @@ Created as a CS 440 project using https://github.com/aimacode/aima-python
 ### Requirements
 For this program to work properly, several things are needed:
 * Minesweeper Game
-   * Works on Google's Minesweeper (Simply search google for 'minesweeper' and click play)
+   * Works on the Windows XP Minesweeper (Available here)
+   * http://www.minesweeper.info/downloads/WinmineXP.html
 * Linux application 'Scrot'
    * For this application to run on linux, you need the application Scrot for interfacing with pyautogui
 * Pyhon packagage 'pyautogui'
