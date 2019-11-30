@@ -1,5 +1,6 @@
 import pyautogui
 import time
+import sys
 from PIL import Image, ImageGrab
 
 #Close program if you go to (0,0)
@@ -16,6 +17,7 @@ difficultySizes = [(9,9),(16,16),(30,16)]
 difficultyBoxSizes = [16,16,16]
 difficultyBombs = [10,40,99]
 boxPositions = []
+solutionPositions = []
 uiHeight=52
 
 #State naming convention: -2: Bomb, -1: unexplored, 0: empty, 1: 1, 2:2... etc
@@ -148,21 +150,63 @@ def play(difficulty, playBox):
     print(state)
     displayState(state)
 
+def parse_file(file_name):
+    difficulty = []
+    # open tbe file
+    with open(file_name) as fp:
+        line = fp.readline()
+        cnt = 1
+        while line:
+            if cnt == 1:
+                if line.strip() == "EASY":
+                    print("EASY TEST FILE")
+                    difficulty = difficultyNames[0]
+                elif line.strip() == "MEDIUM":
+                    print("Medium test file")
+                    difficulty = difficultyNames[1]
+                elif line.strip() == "HARD":
+                    print("Hard test file")
+                    difficulty = difficultyNames[2]
+                else:
+                    print("Difficulty in test file not recognized")
+            else:
+                # get the string vals from the file and turn them into ints
+                vals = line.rstrip().split(", ")
+                solutionPositions.append([int(i) for i in vals] )
+
+            line = fp.readline()
+            cnt += 1
+        print(solutionPositions)
+
+    return difficulty
+
 if __name__ == "__main__":
     print("Initializing Minesweeper Program")
-    result = (3,None)
-    while (result[0] == 3):
-        result = getPlayBox()
-    difficulty = result[0]
-    playBox = result[1]
-    if (playBox != None):
-        print('Detected Difficulty:',difficultyNames[difficulty])
-        play(difficulty, playBox)
+
+    # count the arguments
+    arguments = len(sys.argv) - 1
+
+    # if no input arg passed in, look for windows exe for minesweeper
+    if arguments == 0:
+        result = (3,None)
+        while (result[0] == 3):
+            result = getPlayBox()
+        difficulty = result[0]
+        playBox = result[1]
+        
+        if (playBox != None):
+            print('Detected Difficulty:',difficultyNames[difficulty])
+            play(difficulty, playBox)
+
+        input("Press enter to exit.\n")
     
-    #center = (playBox.left + (playBox.width // 2), playBox.top + (playBox.height // 2) )
-    #click(center[0], center[1])
-    input("Press enter to exit.\n")
-   
+    # if one argument is passed in, open file and parse it
+    elif arguments == 1:
+        difficulty = parse_file(sys.argv[1])
+        # call file parse function here
 
-
-#screenshot = pyautogui.screenshot()
+    # output usage statement to tell user how to run program if incorrect args passed
+    else:
+        print("ERROR - wrong number of input arguments entered.")
+        print("Usage 1 (no input arguments): python minesweeperPro.py")
+        print("Usage 2 (1 input arguement): python minesweeperPro.py testFile.txt")
