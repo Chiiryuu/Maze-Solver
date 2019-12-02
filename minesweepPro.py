@@ -177,7 +177,7 @@ def chooseBestGuess(state):
                     guessList.extend(unknowns)
     #This is done because completely unknown squares are assigned a strange weight
     if (ratio > 0.5):
-        ratio = "Unknown; best decision was an unexplored tile."
+        ratio = 0.5
     return (random.choice(guessList),ratio)
     
 def getStateFromBoard(playBox, boxWidth):
