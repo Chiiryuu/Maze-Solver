@@ -28,3 +28,14 @@ To run the program (after all requirements are satisfied), open the Windows XP M
   * To save time, only look at unopened positions next to opened ones (ones that have numbers by them)
 * Calculate spot with the lowest probability to be a mine
 * Later support harder difficulties (if we have time)
+
+### Control Flow of Program
+* 1.) Locate game on screen
+* 2.) Dicsern selected difficulty
+* 3.) Begin game by clicking middle tile
+  * Any tile with 8 neighbors is optimal.
+* 4.) Convert board on screen into a state in memory
+* 5.) Locate all definite bombs and unexplored safe squares
+  * If > 0, click all relevant squares and return to 4.)
+  * Otherwise, click a square that is least likely to be a bomb then return to 4.)
+* 6.) Terminate after finding all bombs or losing
