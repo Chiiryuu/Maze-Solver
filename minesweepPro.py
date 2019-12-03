@@ -151,29 +151,49 @@ def getNeighbors(col, row, width, height):
     
 def chooseBestGuess(state):
     guessList = []
-    unknownsToBombs = 0
+    unknownList = []
+    unknownsToBombs = -2
+    height = len(state[0])
     for i in range(len(state)):
-            for j in range(len(state[i])):  
-                val = state[i][j][0]
+        for j in range(height):  
+            val = state[i][j][0]
+            if (val == -1 or val == -2):
+                unknownList.append((i,j))
                 
-                if (val == -1 or val == -2):
-                    val = 5
-                
-                unknowns = []
-                bombs = state[i][j][1]
-                difference = val-bombs
-                
-                neighbors = state[i][j][2]
-                for neighbor in neighbors:
-                    if (neighbor[0] == -1):
-                        unknowns.append(neighbor[1])
-                localVal = len(unknowns) - difference
-                if (localVal > unknownsToBombs):
-                    unknownsToBombs = localVal
-                    guessList = unknowns
-                if (localVal == unknownsToBombs):
-                    guessList.extend(unknowns)
-    #This is done because completely unknown squares are assigned a strange weight
+    for unknown in unknownList:
+        space = state[unknown[0]][unknown[1]]
+        localVal = 10
+        neighbors = space[2]
+        for neighbor in neighbors:
+            if (neighbor[0] == -1 or neighbor[1] == -2):
+                continue
+            neighborPos = indexToColRow(neighbor[1], height)
+            neighborState = state[neighborPos[0]][neighborPos[1]]
+            neighborNeighbors = neighborState[2]
+            
+            val = neighborState[0]
+            unknowns = []
+            bombs = neighborState[1]
+            difference = val-bombs
+            for neighborNeighbor in neighborNeighbors:
+                if (neighborNeighbor[0] == -1):
+                    unknowns.append(neighborNeighbor[1])
+            subLocalVal = len(unknowns) - difference
+            localVal = min(localVal, subLocalVal)
+        if (localVal == 10):
+            #unknowns = []
+            #for neighbor in neighbors:
+            #    if (neighbor[0] == -1):
+            #        unknowns.append(neighbor[1])
+            #localVal = len(unknowns)  // 2
+            localVal = -2
+        if (localVal > unknownsToBombs):
+            unknownsToBombs = localVal
+            guessList = []
+            guessList.append(colRowToIndex(unknown[0],unknown[1],height))
+        if (localVal == unknownsToBombs):
+            guessList.append(colRowToIndex(unknown[0],unknown[1],height))
+    print("Val: ",unknownsToBombs)        
     return random.choice(guessList)
     
 def getStateFromBoard(playBox, boxWidth):
