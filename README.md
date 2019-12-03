@@ -7,6 +7,7 @@ For this program to work properly, several things are needed:
 * Minesweeper Game
    * Works on the Windows XP Minesweeper (Available here)
    * http://www.minesweeper.info/downloads/WinmineXP.html
+   * This is also bundled in the repository for ease of use.
 * Linux application 'Scrot'
    * For this application to run on linux, you need the application Scrot for interfacing with pyautogui
 * Pyhon packagage 'pyautogui'
@@ -17,6 +18,8 @@ In its current state, the program will locate the minesweeper application on scr
 
 ### How to use
 To run the program (after all requirements are satisfied), open the Windows XP Minesweeper application and run the python file 'minesweepPro.py' in a terminal that does not cover up the game. The program will automatically play the game. To cancel in mid-game, move the mouse to the Top-Left of the screen.
+
+Optionally, run with the flag '-win' to repeat play until a win is achieved. Use this wisely, as it can be difficult to kill the program while it is playing.
 
 ### Things we have to do to start
 * Plan exactly what our goal is
