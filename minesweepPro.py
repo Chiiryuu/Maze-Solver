@@ -28,7 +28,8 @@ animationDelay=0
 clickDelay = 0
 
 def returnToOrigin(origin, delay=0):
-        pyautogui.moveTo(origin[0], origin[1], duration=delay)
+        pass
+        #pyautogui.moveTo(origin[0], origin[1], duration=delay)
     
 def click(x,y,origin, delay=0):
         if (delay > 0):
@@ -150,27 +151,27 @@ def getNeighbors(col, row, width, height):
     
 def chooseBestGuess(state):
     guessList = []
-    unknownsToBombs = 0.0
+    unknownsToBombs = 0
     for i in range(len(state)):
             for j in range(len(state[i])):  
                 val = state[i][j][0]
+                
+                if (val == -1 or val == -2):
+                    val = 5
                 
                 unknowns = []
                 bombs = state[i][j][1]
                 difference = val-bombs
                 
-                if (difference < 1):
-                    difference = 1
-                
                 neighbors = state[i][j][2]
                 for neighbor in neighbors:
                     if (neighbor[0] == -1):
                         unknowns.append(neighbor[1])
-                ratio = len(unknowns) / (difference)
-                if (ratio > unknownsToBombs):
-                    unknownsToBombs = ratio
+                localVal = len(unknowns) - difference
+                if (localVal > unknownsToBombs):
+                    unknownsToBombs = localVal
                     guessList = unknowns
-                if (abs(ratio - unknownsToBombs) < 0.1):
+                if (localVal == unknownsToBombs):
                     guessList.extend(unknowns)
     #This is done because completely unknown squares are assigned a strange weight
     return random.choice(guessList)
