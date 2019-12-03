@@ -213,14 +213,14 @@ def getStateFromBoard(playBox, boxWidth):
                 stateRow.append(9)
         stateVal.append(stateRow)
         
-        width = len(stateVal)
-        height = len(stateVal[0])
+    width = len(stateVal)
+    height = len(stateVal[0])
         
         
-        state = []
+    state = []
         
         
-        for i in range(len(stateVal)):
+    for i in range(len(stateVal)):
             stateRow = []
             for j in range(len(stateVal[i])):
                 val = stateVal[i][j]
@@ -238,7 +238,7 @@ def getStateFromBoard(playBox, boxWidth):
             state.append(stateRow)
             
         #print(state,'\n')
-        writeNeighbors(state)        
+    writeNeighbors(state)        
         
         
     return state
@@ -314,8 +314,9 @@ def findSafes(state):
 
 
 def play(difficulty, playBox):
+    boxPositions.clear()
     startTime = time.time()
-    nondeterministic = False
+    guesses = 0
     playBoxCoords = (playBox.left, playBox.top, playBox.left +  playBox.width, playBox.top + playBox.height)
     numBoxes = difficultySizes[difficulty]
     boxWidth = difficultyBoxSizes[difficulty]
@@ -381,9 +382,9 @@ def play(difficulty, playBox):
                 time.sleep(animationDelay)
                 state = getStateFromBoard(playBox, boxWidth)
         else:
-            if (nondeterministic == False):
-                nondeterministic = True
-                print("Game is Nondeterministic; Must make guesses...")
+            if (guesses == 0):
+                print("Guesses are required for this board.")
+            guesses += 1
             choice = chooseBestGuess(state)
             choicePos = indexToColRow(choice, len(state[0]) ) 
             choiceLocation = boxPositions[choicePos[0]][choicePos[1]]
@@ -397,47 +398,24 @@ def play(difficulty, playBox):
                 break
 
     if (happyLevel == -1):
-        print("I lost... :(")
+        print("I lost... \nTotal number of guesses made: ",guesses,'\nRuntime: ',(time.time() - startTime)," seconds.\n")
+        return -1
     else:
-        print("I won! :D\nTime to complete: ",(time.time() - startTime)," seconds.")
-def parse_file(file_name):
-    difficulty = []
-    # open tbe file
-    with open(file_name) as fp:
-        line = fp.readline()
-        cnt = 1
-        while line:
-            if cnt == 1:
-                if line.strip() == "EASY":
-                    print("EASY TEST FILE")
-                    difficulty = difficultyNames[0]
-                elif line.strip() == "MEDIUM":
-                    print("Medium test file")
-                    difficulty = difficultyNames[1]
-                elif line.strip() == "HARD":
-                    print("Hard test file")
-                    difficulty = difficultyNames[2]
-                else:
-                    print("Difficulty in test file not recognized")
-            else:
-                # get the string vals from the file and turn them into ints
-                vals = line.rstrip().split(", ")
-                solutionPositions.append([int(i) for i in vals] )
-
-            line = fp.readline()
-            cnt += 1
-        print(solutionPositions)
-
-    return difficulty
+        print("I won! :D\nTotal number of guesses made: ",guesses,"\nTime to complete: ",(time.time() - startTime)," seconds.\n")
+        return 0
+        
+       
 
 if __name__ == "__main__":
-    print("Initializing Minesweeper Program")
+        print("Initializing Minesweeper Program")
 
-    # count the arguments
-    arguments = len(sys.argv) - 1
-
-    # if no input arg passed in, look for windows exe for minesweeper
-    if arguments == 0:
+        # count the arguments
+        arguments = len(sys.argv) - 1
+        mustWin = False
+        # if no input arg passed in, look for windows exe for minesweeper
+        if arguments == 1 and sys.argv[1] == '-win':
+            mustWin = True
+            print('Repeat until win has been enabled. This is dangerous. Move mouse to top left of screen to close program.')
         result = (3,None)
         while (result[0] == 3):
             result = getPlayBox()
@@ -445,8 +423,15 @@ if __name__ == "__main__":
         playBox = result[1]
         
         if (playBox != None):
-            print('Detected Difficulty:',difficultyNames[difficulty])
-            play(difficulty, playBox)
+            print('Detected Difficulty:',difficultyNames[difficulty],'\n')
+            result = -1
+            while (result == -1):
+                result = play(difficulty, playBox)
+                if (mustWin == False):
+                    result = 0
+                if (result == -1):
+                    pyautogui.press('f2')
+                    
             '''try:
                 play(difficulty, playBox)
             except:
@@ -455,14 +440,3 @@ if __name__ == "__main__":
             
 
         input("Press enter to exit.\n")
-    
-    # if one argument is passed in, open file and parse it
-    elif arguments == 1:
-        difficulty = parse_file(sys.argv[1])
-        # call file parse function here
-
-    # output usage statement to tell user how to run program if incorrect args passed
-    else:
-        print("ERROR - wrong number of input arguments entered.")
-        print("Usage 1 (no input arguments): python minesweeperPro.py")
-        print("Usage 2 (1 input arguement): python minesweeperPro.py testFile.txt")
