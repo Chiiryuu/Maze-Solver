@@ -159,12 +159,9 @@ def chooseBestGuess(state):
                 bombs = state[i][j][1]
                 difference = val-bombs
                 
-                if (val == -1):
-                    bombs = 2
-                    difference = 2
-                
-                if (difference == 0):
+                if (difference < 1):
                     difference = 1
+                
                 neighbors = state[i][j][2]
                 for neighbor in neighbors:
                     if (neighbor[0] == -1):
@@ -176,9 +173,7 @@ def chooseBestGuess(state):
                 if (abs(ratio - unknownsToBombs) < 0.1):
                     guessList.extend(unknowns)
     #This is done because completely unknown squares are assigned a strange weight
-    if (ratio > 0.5):
-        ratio = 0.5
-    return (random.choice(guessList),ratio)
+    return random.choice(guessList)
     
 def getStateFromBoard(playBox, boxWidth):
     playBoxCoords = (playBox.left, playBox.top, playBox.left +  playBox.width, playBox.top + playBox.height)
@@ -388,9 +383,7 @@ def play(difficulty, playBox):
             if (nondeterministic == False):
                 nondeterministic = True
                 print("Game is Nondeterministic; Must make guesses...")
-            guess = chooseBestGuess(state)
-            choice = guess[0]
-            ratio = guess[1]
+            choice = chooseBestGuess(state)
             choicePos = indexToColRow(choice, len(state[0]) ) 
             choiceLocation = boxPositions[choicePos[0]][choicePos[1]]
             click(choiceLocation[0],choiceLocation[1],(playBox.left, playBox.top),clickDelay)
@@ -403,7 +396,7 @@ def play(difficulty, playBox):
                 break
 
     if (happyLevel == -1):
-        print("I lost... :(\nChance of that space being a bomb: ",(ratio*100))
+        print("I lost... :(")
     else:
         print("I won! :D\nTime to complete: ",(time.time() - startTime)," seconds.")
 def parse_file(file_name):
