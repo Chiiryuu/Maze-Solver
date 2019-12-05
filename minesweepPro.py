@@ -149,32 +149,61 @@ def getNeighbors(col, row, width, height):
         neighbors.append((9, neighbor))
     return neighbors
     
-def chooseBestGuess(state):
+def chooseBestGuess(state, numBombs):
     guessList = []
+    frontier = []
     unknownsToBombs = 0
+    totalCombinations = 0
+    frontierValues = {}
+    height = len(state[0])
     for i in range(len(state)):
-            for j in range(len(state[i])):  
+            for j in range(height):  
                 val = state[i][j][0]
-                
-                if (val == -1 or val == -2):
-                    val = 5
-                
-                unknowns = []
-                bombs = state[i][j][1]
-                difference = val-bombs
-                
                 neighbors = state[i][j][2]
-                for neighbor in neighbors:
-                    if (neighbor[0] == -1):
-                        unknowns.append(neighbor[1])
-                localVal = len(unknowns) - difference
-                if (localVal > unknownsToBombs):
-                    unknownsToBombs = localVal
-                    guessList = unknowns
-                if (localVal == unknownsToBombs):
-                    guessList.extend(unknowns)
+                if (val > 0):
+                    onFrontier=False
+                    numNeighbors = 0
+                    for neighbor in neighbors:
+                        if (neighbor[0] == -1):
+                            onFrontier = True
+                            numNeighbors = numNeighbors + 1
+                    if (onFrontier):
+                        frontier.append((i,j,numNeighbors))
+                        
+    for member in frontier:
+        object = state[member[0]][member[1]]
+        neighbors = object[2]
+        unknownNeighbors = member[2]
+        bombs = state[i][j][1]
+        difference = object[0]-object[1]
+        for neighbor in neighbors:
+                neighborPos =  indexToColRow(neighbor[1], height)
+                neighborObject = state[neighborPos[0]][neighborPos[1]]
+                if (neighborObject[0] == -1):
+                    val = frontierValues.get(neighbor[1], (0,0))
+                    frontierValues[neighbor[1]] = (val[0] + difference, val[1] + unknownNeighbors)
+    max = 1.0
+    for key in frontierValues:
+        val = frontierValues[key]
+        val = val[0] / val[1]
+        #print("val: ",val,", max: ",max,"val > max: ",val > max)
+        if (val < max):
+            guessList = []
+            guessList.append(key)
+            max = val
+        elif (abs(val - max) < 0.01):
+            guessList.append(key)
+    #print("Choosing 1 of ",len(guessList)," best guesses...")   
+    #print(frontierValues)
+
+                     
+    #print("Frontier: ",len(frontier),", Bombs:",numBombs)
     #This is done because completely unknown squares are assigned a strange weight
-    return random.choice(guessList)
+    
+    #guess = random.choice(frontier)
+    #guess = colRowToIndex(guess[0], guess[1], height)
+    #return guess
+    return (random.choice(guessList), max)
     
 def getStateFromBoard(playBox, boxWidth):
     playBoxCoords = (playBox.left, playBox.top, playBox.left +  playBox.width, playBox.top + playBox.height)
@@ -311,12 +340,22 @@ def findSafes(state):
                     state[i][j] = (val, bombs, neighbors)
     writeNeighbors(state)
     return safes
-
+    
+def getUnknowns(state):
+    unknowns = []
+    height = len(state[0])
+    for i in range(len(state)):
+            for j in range(height):
+                val = state[i][j][0]
+                if (val == -1):
+                    unknowns.append(colRowToIndex(i,j,height))
+    return unknowns
 
 def play(difficulty, playBox):
     boxPositions.clear()
     startTime = time.time()
     guesses = 0
+    numBombs = difficultyBombs[difficulty]
     playBoxCoords = (playBox.left, playBox.top, playBox.left +  playBox.width, playBox.top + playBox.height)
     numBoxes = difficultySizes[difficulty]
     boxWidth = difficultyBoxSizes[difficulty]
@@ -358,15 +397,19 @@ def play(difficulty, playBox):
     ratio = 0
         
     changed = True    
-    while (changed == True and happyLevel != -1):
+    while (changed == True and happyLevel != -1 and numBombs > 0):
         changed = False
         #displayState(state)
         bombs = findBombs(state)
         safes = findSafes(state)
         for bomb in bombs:
+            numBombs = numBombs - 1
             bombPos = indexToColRow(bomb, len(state[0]) ) 
             bombLocation = boxPositions[bombPos[0]][bombPos[1]]
             rclick(bombLocation[0],bombLocation[1],(playBox.left, playBox.top),clickDelay)
+            if (numBombs == 0):
+                print("All bombs successfully flagged!")
+                safes = getUnknowns(state)
         
         for safe in safes:
             changed = True
@@ -385,7 +428,9 @@ def play(difficulty, playBox):
             if (guesses == 0):
                 print("Guesses are required for this board.")
             guesses += 1
-            choice = chooseBestGuess(state)
+            guess = chooseBestGuess(state, numBombs)
+            choice = guess[0]
+            ratio = guess[1]
             choicePos = indexToColRow(choice, len(state[0]) ) 
             choiceLocation = boxPositions[choicePos[0]][choicePos[1]]
             click(choiceLocation[0],choiceLocation[1],(playBox.left, playBox.top),clickDelay)
@@ -398,7 +443,7 @@ def play(difficulty, playBox):
                 break
 
     if (happyLevel == -1):
-        print("I lost... \nTotal number of guesses made: ",guesses,'\nRuntime: ',(time.time() - startTime)," seconds.\n")
+        print("I lost... \nChance of that spot being a bomb: ",(ratio*100),"%\nTotal number of guesses made: ",guesses,'\nRuntime: ',(time.time() - startTime)," seconds.\n")
         return -1
     else:
         print("I won! :D\nTotal number of guesses made: ",guesses,"\nTime to complete: ",(time.time() - startTime)," seconds.\n")
