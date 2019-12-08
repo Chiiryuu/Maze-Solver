@@ -3,6 +3,8 @@ import time
 import random
 import sys
 from PIL import Image, ImageGrab
+import fileInput as fileHelper
+import helperFunctions as funcs
 
 #Close program if you go to (0,0)
 #  https://pyautogui.readthedocs.io/en/latest/cheatsheet.html
@@ -47,30 +49,6 @@ def rclick(x,y,origin, delay=0):
         #if (delay > 0):
             #pyautogui.moveTo(origin[0], origin[1], duration=delay)
         #pyautogui.moveTo(origin[0], origin[1])   
-        
-def displayState(state):
-    rowSize = len(state)
-    colSize = len(state[0])
-    rowStrings = ['']*colSize
-    for i in range(rowSize):
-        for j in range(colSize):
-            rowStrings[j] += str(state[i][j][0]) + ' '
-    result = ''
-    for string in rowStrings:
-        result += string + '\n'
-        
-    result = result.replace('-1','X').replace('-2','B').replace('0',' ').replace('9','?')
-    print(result)
-
-def colRowToIndex(col, row, height):
-    if (col < 0 or row < 0 or row >= height):
-        return -1
-    return col*height + row
-    
-def indexToColRow(index, height):
-    col = index // height
-    row = index % height
-    return (col, row)
     
 def checkHappyLevel(playBox):
     basePos = [playBox.width//2, 17]
@@ -111,71 +89,6 @@ def getPlayBox():
     print("ERROR: Could not find playing field!")
     return (3,None)
     
-def getNeighbors(col, row, width, height):
-    neighbors = []
-    min = -1
-    max = width * height
-    
-    neighbor = colRowToIndex(col-1, row-1, height)
-    if (neighbor > min and neighbor < max):
-        neighbors.append((9, neighbor))
-    
-    neighbor = colRowToIndex(col-1, row, height)
-    if (neighbor > min and neighbor < max):
-        neighbors.append((9, neighbor))
-        
-    neighbor = colRowToIndex(col-1, row+1, height)
-    if (neighbor > min and neighbor < max):
-        neighbors.append((9, neighbor))
-        
-    neighbor = colRowToIndex(col, row-1, height)
-    if (neighbor > min and neighbor < max):
-        neighbors.append((9, neighbor))
-        
-    neighbor = colRowToIndex(col, row+1, height)
-    if (neighbor > min and neighbor < max):
-        neighbors.append((9, neighbor))
-        
-    neighbor = colRowToIndex(col+1, row-1, height)
-    if (neighbor > min and neighbor < max):
-        neighbors.append((9, neighbor))
-    
-    neighbor = colRowToIndex(col+1, row, height)
-    if (neighbor > min and neighbor < max):
-        neighbors.append((9, neighbor))
-        
-    neighbor = colRowToIndex(col+1, row+1, height)
-    if (neighbor > min and neighbor < max):
-        neighbors.append((9, neighbor))
-    return neighbors
-    
-def chooseBestGuess(state):
-    guessList = []
-    unknownsToBombs = 0
-    for i in range(len(state)):
-            for j in range(len(state[i])):  
-                val = state[i][j][0]
-                
-                if (val == -1 or val == -2):
-                    val = 5
-                
-                unknowns = []
-                bombs = state[i][j][1]
-                difference = val-bombs
-                
-                neighbors = state[i][j][2]
-                for neighbor in neighbors:
-                    if (neighbor[0] == -1):
-                        unknowns.append(neighbor[1])
-                localVal = len(unknowns) - difference
-                if (localVal > unknownsToBombs):
-                    unknownsToBombs = localVal
-                    guessList = unknowns
-                if (localVal == unknownsToBombs):
-                    guessList.extend(unknowns)
-    #This is done because completely unknown squares are assigned a strange weight
-    return random.choice(guessList)
-    
 def getStateFromBoard(playBox, boxWidth):
     playBoxCoords = (playBox.left, playBox.top, playBox.left +  playBox.width, playBox.top + playBox.height)
     image = ImageGrab.grab(playBoxCoords)
@@ -183,6 +96,7 @@ def getStateFromBoard(playBox, boxWidth):
     #Optional; used for testing
     #image.save('initial-state.png')
     stateVal = []
+    #print(boxPositions)
     for row in boxPositions:
         stateRow = []
         for pos in row:
@@ -226,7 +140,7 @@ def getStateFromBoard(playBox, boxWidth):
                 val = stateVal[i][j]
                 #print(val)
                 bombs = 0
-                neighbors = getNeighbors(i, j, width, height)
+                neighbors = funcs.getNeighbors(i, j, width, height)
                 #index = colRowToIndex(i,j,height)
                 #pos = indexToColRow(index, height)
                 #print(pos, ', ',index)
@@ -238,79 +152,10 @@ def getStateFromBoard(playBox, boxWidth):
             state.append(stateRow)
             
         #print(state,'\n')
-    writeNeighbors(state)        
+    funcs.writeNeighbors(state)        
         
         
     return state
-
-def writeNeighbors(state):
-    height = len(state[0])
-    for i in range(len(state)):
-            for j in range(len(state[i])):  
-                val = state[i][j][0]
-                bombs = state[i][j][1]
-                neighbors = state[i][j][2]
-                newNeighbors = []
-                for k in range(len(neighbors)):
-                    #print(neighbors[k])
-                    neigborPos = indexToColRow(neighbors[k][1], height) 
-                    neighborState = state[neigborPos[0]][neigborPos[1]]
-                    if neighborState[0] == -2:
-                        bombs+=1
-                    elif neighborState[0] != 0:
-                        newNeighbors.append((neighborState[0], neighbors[k][1]))
-                state[i][j] = newState = (val, bombs, newNeighbors)
-    
-def findBombs(state):
-    newBombs = []
-    
-    for i in range(len(state)):
-            for j in range(len(state[i])):
-                unknowns = []
-                val = state[i][j][0]
-                bombs = state[i][j][1]
-                neighbors = state[i][j][2]
-                for neighbor in neighbors:
-                    if (neighbor[0] == -1):
-                        unknowns.append(neighbor[1])
-                if (val - bombs == len(unknowns)):
-                    for unknown in unknowns:
-                        if (not unknown in newBombs):
-                            newBombs.append(unknown)
-                    for k in reversed(range(len(neighbors))):
-                        if (neighbors[k][1] in unknowns):
-                            neighbors.pop(k)
-                    bombs = bombs + len(unknowns)
-                    state[i][j] = (val, bombs, neighbors)
-                    
-            for bomb in newBombs:
-                bombPos = indexToColRow(bomb, len(state[0]) ) 
-                state[bombPos[0]][bombPos[1]] = (-2, 0, [])
-    writeNeighbors(state)
-    return newBombs
-    
-def findSafes(state):
-    safes = []
-    
-    for i in range(len(state)):
-            for j in range(len(state[i])):
-                unknowns = []
-                val = state[i][j][0]
-                bombs = state[i][j][1]
-                neighbors = state[i][j][2]
-                for neighbor in neighbors:
-                    if (neighbor[0] == -1):
-                        unknowns.append(neighbor[1])
-                if (val - bombs == 0):
-                    for unknown in unknowns:
-                        if (not unknown in safes):
-                            safes.append(unknown)
-                    for k in reversed(range(len(neighbors))):
-                        if (neighbors[k][1] in unknowns):
-                            neighbors.pop(k)
-                    state[i][j] = (val, bombs, neighbors)
-    writeNeighbors(state)
-    return safes
 
 
 def play(difficulty, playBox):
@@ -342,12 +187,12 @@ def play(difficulty, playBox):
     
     #print(state)
     
-    
+    print("STATE: ", state)
     #print('Bombs: ',bombs)
     
     
     
-    #print('Safes: ',safes)
+    print('Safes: ',funcs.findSafes(state))
     
     #displayState(state)
     
@@ -361,16 +206,16 @@ def play(difficulty, playBox):
     while (changed == True and happyLevel != -1):
         changed = False
         #displayState(state)
-        bombs = findBombs(state)
-        safes = findSafes(state)
+        bombs = funcs.findBombs(state)
+        safes = funcs.findSafes(state)
         for bomb in bombs:
-            bombPos = indexToColRow(bomb, len(state[0]) ) 
+            bombPos = funcs.indexToColRow(bomb, len(state[0]) ) 
             bombLocation = boxPositions[bombPos[0]][bombPos[1]]
             rclick(bombLocation[0],bombLocation[1],(playBox.left, playBox.top),clickDelay)
         
         for safe in safes:
             changed = True
-            safePos = indexToColRow(safe, len(state[0]) ) 
+            safePos = funcs.indexToColRow(safe, len(state[0]) ) 
             safeLocation = boxPositions[safePos[0]][safePos[1]]
             click(safeLocation[0],safeLocation[1],(playBox.left, playBox.top),clickDelay)
         if (changed == True):
@@ -385,8 +230,8 @@ def play(difficulty, playBox):
             if (guesses == 0):
                 print("Guesses are required for this board.")
             guesses += 1
-            choice = chooseBestGuess(state)
-            choicePos = indexToColRow(choice, len(state[0]) ) 
+            choice = funcs.chooseBestGuess(state)
+            choicePos = funcs.indexToColRow(choice, len(state[0]) ) 
             choiceLocation = boxPositions[choicePos[0]][choicePos[1]]
             click(choiceLocation[0],choiceLocation[1],(playBox.left, playBox.top),clickDelay)
             happyLevel = checkHappyLevel(playBox)
@@ -403,38 +248,7 @@ def play(difficulty, playBox):
     else:
         print("I won! :D\nTotal number of guesses made: ",guesses,"\nTime to complete: ",(time.time() - startTime)," seconds.\n")
         return 0
-        
-       
 
-def parse_file(file_name):
-    difficulty = []
-    # open tbe file
-    with open(file_name) as fp:
-        line = fp.readline()
-        cnt = 1
-        while line:
-            if cnt == 1:
-                if line.strip() == "EASY":
-                    print("EASY TEST FILE")
-                    difficulty = difficultyNames[0]
-                elif line.strip() == "MEDIUM":
-                    print("Medium test file")
-                    difficulty = difficultyNames[1]
-                elif line.strip() == "HARD":
-                    print("Hard test file")
-                    difficulty = difficultyNames[2]
-                else:
-                    print("Difficulty in test file not recognized")
-            else:
-                # get the string vals from the file and turn them into ints
-                vals = line.rstrip().split(", ")
-                solutionPositions.append([int(i) for i in vals] )
-
-            line = fp.readline()
-            cnt += 1
-        print(solutionPositions)
-
-    return difficulty
 
 if __name__ == "__main__":
 
@@ -449,7 +263,9 @@ if __name__ == "__main__":
     
     if arguments == 1 and sys.argv[1] != '-win':
         print("file input")
-        difficulty = parse_file(sys.argv[1])
+        difficulty = fileHelper.parse_file(sys.argv[1])
+        playBox = fileHelper.get_empty_play_box(difficulty)
+        fileHelper.play(difficulty, playBox)
 
     elif arguments == 0 or (arguments == 1 and sys.argv[1] == '-win'):
         # if no input arg passed in, look for windows exe for minesweeper
