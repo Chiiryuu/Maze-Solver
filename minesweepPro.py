@@ -1,15 +1,9 @@
 import pyautogui
 import time
-import random
 import sys
 from PIL import Image, ImageGrab
 import fileInput as fileHelper
 import helperFunctions as funcs
-
-#Close program if you go to (0,0)
-#  https://pyautogui.readthedocs.io/en/latest/cheatsheet.html
-#image = cv2.cvtColor(np.array(pyautogui.screenshot(region=(0, 0, 1300, 750))), cv2.COLOR_BGR2GRAY)
-
 
 pyautogui.FAILSAFE = True
 difficultyNames = ['Easy','Medium','Hard']
@@ -25,32 +19,38 @@ uiHeight=52
 
 #State naming convention: -2: Bomb, -1: unexplored, 0: empty, 1: 1, 2:2... etc
 
-#animationDelay=0.85
 animationDelay=0
 clickDelay = 0
 
 def returnToOrigin(origin, delay=0):
         pass
-        #pyautogui.moveTo(origin[0], origin[1], duration=delay)
     
 def click(x,y,origin, delay=0):
-        if (delay > 0):
-            pyautogui.moveTo(x, y, duration=delay)
-        pyautogui.click(x,y) #button='right'
-        pyautogui.click(x,y)
-        #if (delay > 0):
-            #pyautogui.moveTo(origin[0], origin[1], duration=delay)
-        #pyautogui.moveTo(origin[0], origin[1])   
+    ''' This function is used to move the mouse
+        to the x,y coordinate passed into the 
+        function, and then clicking there.
+    '''
+    if (delay > 0):
+        pyautogui.moveTo(x, y, duration=delay)
+    pyautogui.click(x,y) #button='right'
+    pyautogui.click(x,y)   
         
 def rclick(x,y,origin, delay=0):
-        if (delay > 0):
-            pyautogui.moveTo(x, y, duration=delay)
-        pyautogui.click(x,y, button='right')
-        #if (delay > 0):
-            #pyautogui.moveTo(origin[0], origin[1], duration=delay)
-        #pyautogui.moveTo(origin[0], origin[1])   
+    """ This function is used to do a right clikc
+        to flag areas as bombs. It moves to the
+        x,y coordinate passed into the function
+        and then clicks it with the right button
+        parameter.
+    """
+    if (delay > 0):
+        pyautogui.moveTo(x, y, duration=delay)
+    pyautogui.click(x,y, button='right')  
     
 def checkHappyLevel(playBox):
+    """ This function is used to check the "happy level" on the
+        windows executable. The "happy level" tells us when the
+        game is won, lost or if it is still going on.
+    """
     basePos = [playBox.width//2, 17]
     
     playBoxCoords = (playBox.left, playBox.top, playBox.left +  playBox.width, playBox.top + playBox.height)
@@ -58,19 +58,18 @@ def checkHappyLevel(playBox):
     pixelSpace = image.load()
     
     #5- win 
-    #10 - lose
-    #12 - ok
-    
     midPix = pixelSpace[basePos[0],basePos[1]+5]
     if (midPix[0] < 10 and midPix[1] < 10 and midPix[2] < 10):
         #print("We won!")
         return 1
-        
+       
+    #10 - lose 
     midPix = pixelSpace[basePos[0],basePos[1]+10]
     if (midPix[0] < 10 and midPix[1] < 10 and midPix[2] < 10):
         #print("We died...")
         return -1
     
+    #12 - ok
     midPix = pixelSpace[basePos[0],basePos[1]+12]
     if (midPix[0] < 10 and midPix[1] < 10 and midPix[2] < 10):
         #print("We're alive")
@@ -80,23 +79,29 @@ def checkHappyLevel(playBox):
     return -2
 
 def getPlayBox():
+    """ This function is used to capture an image on the
+        screen and get the playBox from it.
+    """
     for i in range(len(difficultyPics)):
-        #print('Searching for',difficultyNames[i])
         playBox = pyautogui.locateOnScreen(difficultyPics[i])
-        #print(playBox)
+
         if (playBox != None):
             return (i,playBox)
     print("ERROR: Could not find playing field!")
     return (3,None)
     
 def getStateFromBoard(playBox, boxWidth):
+    """ This function is used for getting the state from the 
+        board. It grabs the image of the minesweeper program
+        and then does processing on the pixels to get what values 
+        are present on the board.
+    """
     playBoxCoords = (playBox.left, playBox.top, playBox.left +  playBox.width, playBox.top + playBox.height)
     image = ImageGrab.grab(playBoxCoords)
     pixelSpace = image.load()
-    #Optional; used for testing
-    #image.save('initial-state.png')
+
     stateVal = []
-    #print(boxPositions)
+
     for row in boxPositions:
         stateRow = []
         for pos in row:
@@ -105,7 +110,6 @@ def getStateFromBoard(playBox, boxWidth):
                 stateRow.append(-2)
             elif (midPix[0] > 190 and midPix[1] > 190 and midPix[2] > 190):
                 topPix = pixelSpace[pos[0]-playBox.left,pos[1]-playBox.top-(boxWidth//2)]
-                #print('\t',topPix)
                 if (topPix[0] > 250 and topPix[1] > 250 and topPix[2] > 250):
                     stateRow.append(-1)
                 else:
@@ -123,50 +127,47 @@ def getStateFromBoard(playBox, boxWidth):
             elif (midPix[0] > 70 and midPix[1] < 10 and midPix[2] < 10):
                 stateRow.append(5)
             else:
-                print(midPix)
                 stateRow.append(9)
         stateVal.append(stateRow)
         
     width = len(stateVal)
     height = len(stateVal[0])
-        
-        
+             
     state = []
-        
         
     for i in range(len(stateVal)):
             stateRow = []
             for j in range(len(stateVal[i])):
                 val = stateVal[i][j]
-                #print(val)
                 bombs = 0
                 neighbors = funcs.getNeighbors(i, j, width, height)
-                #index = colRowToIndex(i,j,height)
-                #pos = indexToColRow(index, height)
-                #print(pos, ', ',index)
-                #state[pos[0]][pos[1]] = index
-                #state[i][j] = i*height + j
                 newState = (val, bombs, neighbors)
                 stateRow.append(newState)
-                #print(state[i][j])
             state.append(stateRow)
-            
-        #print(state,'\n')
+
     funcs.writeNeighbors(state)        
-        
         
     return state
 
 
 def play(difficulty, playBox):
+    """ This function is used to play the minesweeper game
+        for the windows executable method. 
+    """
+    # set the variables to initiale values
     boxPositions.clear()
     startTime = time.time()
     guesses = 0
+    numBombs = difficultyBombs[difficulty]
+
+    # get the playbox coordinates and info for middle box
     playBoxCoords = (playBox.left, playBox.top, playBox.left +  playBox.width, playBox.top + playBox.height)
     numBoxes = difficultySizes[difficulty]
     boxWidth = difficultyBoxSizes[difficulty]
     basePosition = (playBox.left, playBox.top)
     middleBaseBox = (playBox.left + boxWidth//2, playBox.top + uiHeight + boxWidth//2)
+
+    # build up boxPositions
     for i in range(numBoxes[0]):
         col = []
         xPos = middleBaseBox[0] + boxWidth*i
@@ -175,65 +176,81 @@ def play(difficulty, playBox):
             col.append((xPos,yPos))
         boxPositions.append(col)
     
+    # calculate the middle box position
     middleBox = boxPositions[numBoxes[0]//2 -1][numBoxes[1]//2 -1]
     
+    # click on the middle box
     click(middleBox[0],middleBox[1],(playBox.left, playBox.top),clickDelay)
     
-    #Needed for particles to fade
+    # Needed for particles to fade
     returnToOrigin( (playBox.left, playBox.top), clickDelay )
     time.sleep(animationDelay)
     
+    # get current state 
     state = getStateFromBoard(playBox, boxWidth)
-    
-    #print(state)
-    
-    print("STATE: ", state)
-    #print('Bombs: ',bombs)
-    
-    
-    
-    print('Safes: ',funcs.findSafes(state))
-    
-    #displayState(state)
-    
-    #print(state)
-    
-    happyLevel = 0
-    
+
+    # set the condition variables for the while loop
+    happyLevel = 0    
     ratio = 0
-        
     changed = True    
-    while (changed == True and happyLevel != -1):
+    while (changed == True and happyLevel != -1 and numBombs > 0):
         changed = False
-        #displayState(state)
+ 
+        # find the bombs and safe locations
         bombs = funcs.findBombs(state)
         safes = funcs.findSafes(state)
+
+        # go through all bombs
         for bomb in bombs:
+            # get new number of unknown bombs
+            numBombs = numBombs - 1
+
+            # get the location of the bomb
             bombPos = funcs.indexToColRow(bomb, len(state[0]) ) 
             bombLocation = boxPositions[bombPos[0]][bombPos[1]]
+
+            # right click to flag the location as a bomb
             rclick(bombLocation[0],bombLocation[1],(playBox.left, playBox.top),clickDelay)
+
+            # if the number of unknown bombs is zero, get the new set of safe locations
+            if (numBombs == 0):
+                print("All bombs successfully flagged!")
+                safes = funcs.getUnknowns(state)
         
+        # go through all the safe locations
         for safe in safes:
             changed = True
             safePos = funcs.indexToColRow(safe, len(state[0]) ) 
             safeLocation = boxPositions[safePos[0]][safePos[1]]
+
+            # click on the safe location
             click(safeLocation[0],safeLocation[1],(playBox.left, playBox.top),clickDelay)
         if (changed == True):
+            # check if we have solved minsweeper yet
             happyLevel = checkHappyLevel(playBox)
             if (happyLevel == 1):
                 changed = False
             else:
+                # move to origin and get new state
                 returnToOrigin( (playBox.left, playBox.top), clickDelay )
                 time.sleep(animationDelay)
                 state = getStateFromBoard(playBox, boxWidth)
+
+        # otherwise we need guesses to solve
         else:
             if (guesses == 0):
                 print("Guesses are required for this board.")
             guesses += 1
-            choice = funcs.chooseBestGuess(state)
+            guess = funcs.chooseBestGuessV2(state, numBombs)
+            choice = guess[0]
+            ratio = guess[1]
             choicePos = funcs.indexToColRow(choice, len(state[0]) ) 
             choiceLocation = boxPositions[choicePos[0]][choicePos[1]]
+
+            # click on the guess location
             click(choiceLocation[0],choiceLocation[1],(playBox.left, playBox.top),clickDelay)
+
+            # check if solved yet
             happyLevel = checkHappyLevel(playBox)
             if (happyLevel == 0):
                 changed = True
@@ -241,9 +258,9 @@ def play(difficulty, playBox):
                 state = getStateFromBoard(playBox, boxWidth)
             if (happyLevel == -1):
                 break
-
+    funcs.displayState(state)
     if (happyLevel == -1):
-        print("I lost... \nTotal number of guesses made: ",guesses,'\nRuntime: ',(time.time() - startTime)," seconds.\n")
+        print("I lost... \nChance of that spot being a bomb: ",(ratio*100),"%\nTotal number of guesses made: ",guesses,'\nRuntime: ',(time.time() - startTime)," seconds.\n")
         return -1
     else:
         print("I won! :D\nTotal number of guesses made: ",guesses,"\nTime to complete: ",(time.time() - startTime)," seconds.\n")
@@ -263,9 +280,9 @@ if __name__ == "__main__":
     
     if arguments == 1 and sys.argv[1] != '-win':
         print("file input")
-        difficulty = fileHelper.parse_file(sys.argv[1])
+        difficulty, solutionPositions = fileHelper.parse_file(sys.argv[1])
         playBox = fileHelper.get_empty_play_box(difficulty)
-        fileHelper.play(difficulty, playBox)
+        fileHelper.play(difficulty, playBox, solutionPositions)
 
     elif arguments == 0 or (arguments == 1 and sys.argv[1] == '-win'):
         # if no input arg passed in, look for windows exe for minesweeper
