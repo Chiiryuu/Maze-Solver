@@ -150,7 +150,7 @@ def getStateFromBoard(playBox, boxWidth):
     return state
 
 
-def play(difficulty, playBox):
+def play(difficulty, playBox, guessFunction = funcs.chooseBestGuessV3):
     """ This function is used to play the minesweeper game
         for the windows executable method. 
     """
@@ -191,7 +191,7 @@ def play(difficulty, playBox):
 
     # set the condition variables for the while loop
     happyLevel = 0    
-    ratio = 0
+    ratio = 1
     changed = True    
     while (changed == True and happyLevel != -1 and numBombs > 0):
         changed = False
@@ -214,7 +214,7 @@ def play(difficulty, playBox):
 
             # if the number of unknown bombs is zero, get the new set of safe locations
             if (numBombs == 0):
-                print("All bombs successfully flagged!")
+                #print("All bombs successfully flagged!")
                 safes = funcs.getUnknowns(state)
         
         # go through all the safe locations
@@ -238,10 +238,10 @@ def play(difficulty, playBox):
 
         # otherwise we need guesses to solve
         else:
-            if (guesses == 0):
-                print("Guesses are required for this board.")
+            #if (guesses == 0):
+               #print("Guesses are required for this board.")
             guesses += 1
-            guess = funcs.chooseBestGuessV2(state, numBombs)
+            guess = guessFunction(state, numBombs)
             choice = guess[0]
             ratio = guess[1]
             choicePos = funcs.indexToColRow(choice, len(state[0]) ) 
@@ -254,18 +254,59 @@ def play(difficulty, playBox):
             happyLevel = checkHappyLevel(playBox)
             if (happyLevel == 0):
                 changed = True
-                time.sleep(animationDelay)
+                #time.sleep(animationDelay)
                 state = getStateFromBoard(playBox, boxWidth)
             if (happyLevel == -1):
                 break
-    funcs.displayState(state)
-    if (happyLevel == -1):
-        print("I lost... \nChance of that spot being a bomb: ",(ratio*100),"%\nTotal number of guesses made: ",guesses,'\nRuntime: ',(time.time() - startTime)," seconds.\n")
-        return -1
-    else:
-        print("I won! :D\nTotal number of guesses made: ",guesses,"\nTime to complete: ",(time.time() - startTime)," seconds.\n")
-        return 0
-
+    #funcs.displayState(state)
+    runTime = (time.time() - startTime)
+    returnVal = 0
+    if (happyLevel == 1):
+        returnVal = 1
+        numBombs = 0
+    
+    return (returnVal, guesses, numBombs, ratio, runTime)
+    
+def tupleToCSVLine(tuple):
+    resultText = ''
+    for i in range(len(tuple)):
+        resultText += str(tuple[i])
+        if (i+1 == len(tuple)):
+            resultText+='\n'
+        else:
+            resultText+=','
+    return resultText
+    
+def getData(difficulty, playBox, trials=100):
+    guessFunctions = [funcs.chooseBestGuessV0, funcs.chooseBestGuessV1, funcs.chooseBestGuessV2, funcs.chooseBestGuessV3]
+    
+    for functionIndex in range(len(guessFunctions)):
+    
+        listOfResults = []
+        avgResult = [0,0,0,0,0]
+        print('Getting data for Guess Algorithm v'+str(functionIndex)+', difficulty '+difficultyNames[difficulty])
+        for i in range(trials):
+            pyautogui.press('f2')
+            result = play(difficulty, playBox,guessFunctions[functionIndex])
+            #print(result)
+            listOfResults.append(result)
+            for i in range(len(result)):
+                avgResult[i] = avgResult[i] + result[i]
+            
+        for i in range(len(avgResult)):
+            avgResult[i] = avgResult[i] / trials
+        
+        dataDump = open('data/guess-v'+str(functionIndex+1)+'-'+difficultyNames[difficulty]+'.csv','w')
+        dataDump.write('success,guesses,bombs,confidence,runtime\n')
+    
+        for result in listOfResults:
+            resultText = tupleToCSVLine(result)
+            dataDump.write(resultText)
+        
+        #dataDump.write( ',,,,\n')
+        dataDump.write( tupleToCSVLine(avgResult) )
+        dataDump.close()
+    input("Data collection complete!\nPress enter to exit.\n")
 
 if __name__ == "__main__":
 
@@ -278,7 +319,21 @@ if __name__ == "__main__":
     arguments = len(sys.argv) - 1
     mustWin = False
     
-    if arguments == 1 and sys.argv[1] != '-win':
+    if arguments > 0 and sys.argv[1] == '-data':
+        trials = 100
+        if arguments == 2:
+            trials = int(sys.argv[2])
+        result = (3,None)
+        while (result[0] == 3):
+            result = getPlayBox()
+        difficulty = result[0]
+        playBox = result[1]
+        if (playBox != None):
+            print('Collecting data on',trials,'trials for:',difficultyNames[difficulty],'\n')
+            getData(difficulty, playBox, trials)
+        
+    
+    elif arguments == 1 and sys.argv[1] != '-win':
         print("file input")
         difficulty, solutionPositions = fileHelper.parse_file(sys.argv[1])
         playBox = fileHelper.get_empty_play_box(difficulty)
@@ -297,12 +352,16 @@ if __name__ == "__main__":
         
         if (playBox != None):
             print('Detected Difficulty:',difficultyNames[difficulty],'\n')
-            result = -1
-            while (result == -1):
+            result = (0,0,0,0,0)
+            while (result[0] == 0):
                 result = play(difficulty, playBox)
+                if (result[0] == 0):
+                    print("I lost... \nChance of that spot being a bomb: ",(result[3]*100),"%\nTotal number of guesses made: ",result[1],'\nRuntime: ',result[4]," seconds.\n")
+                else:
+                    print("I won! :D\nTotal number of guesses made: ",result[1],"\nTime to complete: ",result[4]," seconds.\n")
                 if (mustWin == False):
-                    result = 0
-                if (result == -1):
+                    result = (1,0,0,0,0)
+                if (result[0] == 0):
                     pyautogui.press('f2')
             
 
