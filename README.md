@@ -1,6 +1,7 @@
 # Minesweeper AI
 A program that plays minesweeper, by weighing the probability of mines being on certain tiles. 
-Created as a CS 440 project using https://github.com/aimacode/aima-python
+Created as a CS 440 project.
+If you are reading this outside of Github, here is a link to our repository: https://github.com/Chiiryuu/Minesweeper-AI
 
 ### Requirements
 For this program to work properly, several things are needed:
